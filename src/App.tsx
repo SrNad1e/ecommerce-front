@@ -16,7 +16,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const featured = [
   {
@@ -39,44 +39,7 @@ const featured = [
   },
 ]
 
-const offers = [
-  {
-    name: 'Luz Ambito',
-    price: 79,
-    oldPrice: 119,
-    discount: 30,
-    desc: 'Iluminacion suave para tu espacio.',
-    image:
-      'https://images.unsplash.com/photo-1501045661006-fcebe0257c3f?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: 'Mouse Pulse',
-    price: 59,
-    oldPrice: 89,
-    discount: 30,
-    desc: 'Preciso y comodo para el dia a dia.',
-    image:
-      'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    name: 'Monitor Flux',
-    price: 219,
-    oldPrice: 259,
-    discount: 30,
-    desc: 'Colores limpios y bordes finos.',
-    image:
-      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    name: 'Silla Axis',
-    price: 189,
-    oldPrice: 229,
-    discount: 30,
-    desc: 'Comodidad para sesiones largas.',
-    image:
-      'https://images.unsplash.com/photo-1549187774-b4e9b0445b41?auto=format&fit=crop&w=900&q=80',
-  },
-]
+
 
 function App() {
 
@@ -87,6 +50,33 @@ function App() {
     const amount = direction === 'left' ? -320 : 320
     featuredRef.current.scrollBy({ left: amount, behavior: 'smooth' })
   }
+
+  const [products, setProducts] = useState<any>([])
+  const [loading, setLoading] = useState(true)
+
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/products')
+        const data = await response.json()
+        setProducts(data)
+      } catch (error) {
+        console.error('Error fetching products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
+
+  if (loading) {
+    return <Box sx={{ p: 4, color: 'text.secondary' }}>Cargando productos...</Box>
+  }
+
+  const featuredProducts = products.slice(0, 2)
+  const offersProducts = products.slice(0, 6)
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -228,18 +218,18 @@ function App() {
                 '&::-webkit-scrollbar': { display: 'none' },
               }}
             >
-              {featured.concat(offers).map((item) => (
+              {featuredProducts.concat(products).map((item: any) => (
                 <Card key={item.name} sx={{ minWidth: 240 }}>
                   <Box
                     component="img"
-                    src={item.image}
+                    src={item.imageUrl}
                     alt={item.name}
                     sx={{ width: '100%', height: 140, objectFit: 'cover' }}
                   />
                   <CardContent>
                     <Typography variant="subtitle1">{item.name}</Typography>
                     <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                      {item.desc}
+                      {item.description}
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                       <Typography fontWeight={700} color="secondary">
@@ -276,19 +266,19 @@ function App() {
               Ofertas
             </Typography>
             <Grid container spacing={2}>
-              {offers.map((item) => (
+              {offersProducts.map((item: any) => (
                 <Grid item xs={12} sm={6} md={4} key={item.name}>
                   <Card sx={{ height: '100%' }}>
                     <Box
                       component="img"
-                      src={item.image}
+                      src={item.imageUrl}
                       alt={item.name}
                       sx={{ width: '100%', height: 160, objectFit: 'cover' }}
                     />
                     <CardContent>
                       <Typography variant="subtitle1">{item.name}</Typography>
                       <Typography color="text.secondary" sx={{ mt: 1 }}>
-                        {item.desc}
+                        {item.description}
                       </Typography>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                         <Typography fontWeight={700} color="secondary">
@@ -332,13 +322,13 @@ function App() {
                     <CardContent sx={{ display: 'flex', gap: 2 }}>
                       <Box
                         component="img"
-                        src={item.image}
+                        src={item.imageUrl}
                         alt={item.name}
                         sx={{ width: 140, height: 90, borderRadius: 1, objectFit: 'cover' }}
                       />
                       <Box>
                         <Typography variant="subtitle1">{item.name}</Typography>
-                        <Typography color="text.secondary">{item.desc}</Typography>
+                        <Typography color="text.secondary">{item.description}</Typography>
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
                           <Typography fontWeight={700} color="secondary">
                             ${item.price}
