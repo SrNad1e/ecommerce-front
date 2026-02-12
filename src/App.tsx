@@ -12,33 +12,15 @@ import {
   Toolbar,
   Typography,
   IconButton,
+  Dialog,
+  DialogContent,
+  DialogTitle,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import { useEffect, useRef, useState } from 'react'
-
-const featured = [
-  {
-    name: 'Auriculares Aura',
-    price: 125,
-    oldPrice: 155,
-    discount: 30,
-    desc: 'Sonido inmersivo y diseno premium.',
-    image:
-      'https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=1200&q=80',
-  },
-  {
-    name: 'Teclado Linea',
-    price: 99,
-    oldPrice: 129,
-    discount: 30,
-    desc: 'Perfil bajo y tacto suave.',
-    image:
-      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=1200&q=80',
-  },
-]
-
 
 
 function App() {
@@ -53,16 +35,25 @@ function App() {
 
   const [products, setProducts] = useState<any>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [cartItems, setCartItems] = useState<any[]>([])
+  const [cartOpen, setCartOpen] = useState(false)
 
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await fetch('http://localhost:3000/products')
+        if (!response.ok) {
+          throw new Error('No se pudieron cargar los productos')
+        }
         const data = await response.json()
         setProducts(data)
+        setError(null)
       } catch (error) {
         console.error('Error fetching products:', error)
+        setError('No se pudieron cargar los productos')
       } finally {
         setLoading(false)
       }
@@ -75,6 +66,10 @@ function App() {
     return <Box sx={{ p: 4, color: 'text.secondary' }}>Cargando productos...</Box>
   }
 
+  if (error) {
+    return <Box sx={{ p: 4, color: 'error.main' }}>{error}</Box>
+  }
+
   const featuredProducts = products.slice(0, 2)
   const offersProducts = products.slice(0, 6)
 
@@ -84,7 +79,7 @@ function App() {
         <Container>
           <Toolbar sx={{ gap: 3 }}>
             <Typography variant="h6" fontWeight={700}>
-              SteamShop
+              GameShop
             </Typography>
 
             <Box
@@ -107,12 +102,10 @@ function App() {
             </Box>
 
             <Stack direction="row" spacing={2}>
-              <Button color="inherit">Biblioteca</Button>
-              <Button color="inherit">Wishlists</Button>
-              <Badge color="secondary" badgeContent={2}>
-                <Button variant="contained" color="secondary">
-                  Carrito
-                </Button>
+              <Badge color="secondary" badgeContent={cartItems.length}>
+                <IconButton color="secondary" aria-label="add to shopping cart">
+                  <AddShoppingCartIcon />
+                </IconButton>
               </Badge>
             </Stack>
           </Toolbar>
@@ -128,7 +121,7 @@ function App() {
                   Categorias
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap' }}>
-                  {['Audio', 'Workspace', 'Movilidad', 'Streaming', 'Accesorios'].map((cat) => (
+                  {['Audio', 'Workspace', 'Gaming', 'Streaming', 'Accesorios'].map((cat) => (
                     <Button key={cat} color="inherit" size="small">
                       {cat}
                     </Button>
@@ -146,8 +139,8 @@ function App() {
                 <Grid item xs={12} md={7}>
                   <Box
                     component="img"
-                    src={featured[0].image}
-                    alt={featured[0].name}
+                    src={products[7].imageUrl}
+                    alt={products[7].name}
                     sx={{ width: '100%', height: 320, objectFit: 'cover' }}
                   />
                 </Grid>
@@ -156,19 +149,19 @@ function App() {
                     <Typography variant="overline" color="secondary">
                       Oferta destacada
                     </Typography>
-                    <Typography variant="h4">{featured[0].name}</Typography>
+                    <Typography variant="h4">{products[7].name}</Typography>
                     <Typography color="text.secondary" sx={{ mt: 1, maxWidth: 420 }}>
                       Audio balanceado, materiales premium y descuento limitado por tiempo corto.
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
                       <Typography variant="h5" color="secondary">
-                        ${featured[0].price}
+                        ${products[7].price}
                       </Typography>
                       <Typography
                         variant="body2"
                         sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
                       >
-                        ${featured[0].oldPrice}
+                        ${products[7].oldPrice}
                       </Typography>
                       <Box
                         sx={{
@@ -182,7 +175,7 @@ function App() {
                           fontWeight: 700,
                         }}
                       >
-                        -{featured[0].discount}%
+                        -{products[7].discount}%
                       </Box>
                     </Stack>
                     <Button variant="contained" color="secondary" sx={{ mt: 2 }}>
@@ -219,7 +212,7 @@ function App() {
               }}
             >
               {featuredProducts.concat(products).map((item: any) => (
-                <Card key={item.name} sx={{ minWidth: 240 }}>
+                <Card onClick={() => setSelectedProduct(item)} sx={{ p: 2, cursor: 'pointer', height: 350, width: 250 }}>
                   <Box
                     component="img"
                     src={item.imageUrl}
@@ -228,7 +221,13 @@ function App() {
                   />
                   <CardContent>
                     <Typography variant="subtitle1">{item.name}</Typography>
-                    <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                    <Typography color="text.secondary" sx={{
+                      mt: 0.5,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}>
                       {item.description}
                     </Typography>
                     <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
@@ -262,13 +261,30 @@ function App() {
             </Box>
 
             {/* Seccion ofertas */}
-            <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
-              Ofertas
-            </Typography>
-            <Grid container spacing={2}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Typography variant="h5">Destacados de hoy</Typography>
+              <Box>
+                <IconButton onClick={() => scrollFeatured('left')} color="inherit">
+                  <ChevronLeftIcon />
+                </IconButton>
+                <IconButton onClick={() => scrollFeatured('right')} color="inherit">
+                  <ChevronRightIcon />
+                </IconButton>
+              </Box>
+            </Box>
+            <Grid container spacing={2} ref={featuredRef} sx={{
+              display: 'grid',
+              gridAutoFlow: 'column',
+              gridAutoColumns: 'minmax(240px, 1fr)',
+              gap: 2,
+              overflowX: 'auto',
+              pb: 1,
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+            }}>
               {offersProducts.map((item: any) => (
                 <Grid item xs={12} sm={6} md={4} key={item.name}>
-                  <Card sx={{ height: '100%' }}>
+                  <Card onClick={() => setSelectedProduct(item)} sx={{ p: 2, cursor: 'pointer', height: 350, width: 250 }}>
                     <Box
                       component="img"
                       src={item.imageUrl}
@@ -277,7 +293,13 @@ function App() {
                     />
                     <CardContent>
                       <Typography variant="subtitle1">{item.name}</Typography>
-                      <Typography color="text.secondary" sx={{ mt: 1 }}>
+                      <Typography color="text.secondary" sx={{
+                        mt: 0.5,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}>
                         {item.description}
                       </Typography>
                       <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
@@ -310,59 +332,76 @@ function App() {
                 </Grid>
               ))}
             </Grid>
-
-            {/* Seccion top sellers */}
-            <Typography variant="h5" sx={{ mt: 4, mb: 2 }}>
-              Top sellers
-            </Typography>
-            <Grid container spacing={2}>
-              {featured.map((item) => (
-                <Grid item xs={12} md={6} key={item.name}>
-                  <Card>
-                    <CardContent sx={{ display: 'flex', gap: 2 }}>
-                      <Box
-                        component="img"
-                        src={item.imageUrl}
-                        alt={item.name}
-                        sx={{ width: 140, height: 90, borderRadius: 1, objectFit: 'cover' }}
-                      />
-                      <Box>
-                        <Typography variant="subtitle1">{item.name}</Typography>
-                        <Typography color="text.secondary">{item.description}</Typography>
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-                          <Typography fontWeight={700} color="secondary">
-                            ${item.price}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
-                          >
-                            ${item.oldPrice}
-                          </Typography>
-                          <Box
-                            sx={{
-                              ml: 'auto',
-                              bgcolor: 'secondary.main',
-                              color: '#0b0f14',
-                              px: 1,
-                              py: 0.2,
-                              borderRadius: 1,
-                              fontSize: 12,
-                              fontWeight: 700,
-                            }}
-                          >
-                            -{item.discount}%
-                          </Box>
-                        </Stack>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
           </Grid>
         </Grid>
       </Container>
+      <Dialog
+        open={Boolean(selectedProduct)}
+        onClose={() => setSelectedProduct(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{selectedProduct?.name}</DialogTitle>
+        <DialogContent>
+          {selectedProduct?.imageUrl && (
+            <Box
+              component="img"
+              src={selectedProduct.imageUrl}
+              alt={selectedProduct.name}
+              sx={{
+                width: '100%',
+                height: 220,
+                objectFit: 'cover',
+                borderRadius: 2,
+                mb: 2,
+              }}
+            />
+          )}
+          <Typography color="text.secondary">
+            {selectedProduct?.description}
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2 }}>
+            <Typography fontWeight={700} color="secondary">
+              ${selectedProduct?.price}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
+            >
+              ${selectedProduct?.oldPrice}
+            </Typography>
+            <Box
+              sx={{
+                ml: 'auto',
+                bgcolor: 'secondary.main',
+                color: '#0b0f14',
+                px: 1,
+                py: 0.2,
+                borderRadius: 1,
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              -{selectedProduct?.discount}%
+            </Box>
+          </Stack>
+          <Badge sx={{ mt: 3 }} color="primary" badgeContent={cartItems.length}>
+            <Button
+              startIcon={<AddShoppingCartIcon />}
+              variant="contained"
+              color="secondary"
+
+              onClick={() => {
+                if (selectedProduct) {
+                  setCartItems((prev) => [...prev, selectedProduct])
+                }
+              }}
+            >
+              Agregar al carrito
+            </Button>
+          </Badge>
+        </DialogContent>
+      </Dialog>
     </Box>
   )
 }
