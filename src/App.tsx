@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   Container,
-  Grid,
   InputBase,
   Stack,
   Toolbar,
@@ -16,6 +15,7 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material'
+import Grid from '@mui/material/Grid'
 import TextField from '@mui/material/TextField'
 import SearchIcon from '@mui/icons-material/Search'
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
@@ -35,12 +35,12 @@ function App() {
     featuredRef.current.scrollBy({ left: amount, behavior: 'smooth' })
   }
 
-  const offerdRef = useRef<HTMLDivElement | null>(null)
+  const offersRef = useRef<HTMLDivElement | null>(null)
 
-  const scrollOffer = (direction: 'left' | 'right') => {
-    if (!offerdRef.current) return
+  const scrollOffers = (direction: 'left' | 'right') => {
+    if (!offersRef.current) return
     const amount = direction === 'left' ? -320 : 320
-    offerdRef.current.scrollBy({ left: amount, behavior: 'smooth' })
+    offersRef.current.scrollBy({ left: amount, behavior: 'smooth' })
   }
 
   const [products, setProducts] = useState<any>([])
@@ -219,32 +219,25 @@ function App() {
           </Toolbar>
         </Container>
       </AppBar>
-
+      <Box sx={{ mt: 3, mb: 2, textAlign: 'center' }}>
+        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+          Categorias
+        </Typography>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+          {['Audio', 'Workspace', 'Gaming', 'Streaming', 'Accesorios'].map((cat) => (
+            <Button key={cat} color="inherit" size="small">
+              {cat}
+            </Button>
+          ))}
+        </Stack>
+      </Box>
       <Container sx={{ py: 4 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={3}>
-            <Stack direction="row" spacing={4} sx={{ flexWrap: 'wrap' }}>
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Categorias
-                </Typography>
-                <Stack direction="row" spacing={1} sx={{ mt: 2, flexWrap: 'wrap' }}>
-                  {['Audio', 'Workspace', 'Gaming', 'Streaming', 'Accesorios'].map((cat) => (
-                    <Button key={cat} color="inherit" size="small">
-                      {cat}
-                    </Button>
-                  ))}
-                </Stack>
-              </Box>
-
-            </Stack>
-          </Grid>
-
-          <Grid item xs={12} md={9}>
+          <Grid size={{ xs: 12 }}>
             {/* Banner grande */}
             <Card sx={{ mb: 3, overflow: 'hidden' }}>
               <Grid container>
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                   <Box
                     component="img"
                     src={products[7].imageUrl}
@@ -252,7 +245,7 @@ function App() {
                     sx={{ width: '100%', height: 320, objectFit: 'cover' }}
                   />
                 </Grid>
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                   <CardContent sx={{ p: 3 }}>
                     <Typography variant="overline" color="secondary">
                       Oferta destacada
@@ -293,7 +286,6 @@ function App() {
                 </Grid>
               </Grid>
             </Card>
-
             {/* Carrusel simple (horizontal) */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="h5">Destacados de hoy</Typography>
@@ -348,50 +340,58 @@ function App() {
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
               <Typography variant="h5">Ofertas</Typography>
               <Box>
-                <IconButton onClick={() => scrollOffer('left')} color="inherit">
+                <IconButton onClick={() => scrollOffers('left')} color="inherit">
                   <ChevronLeftIcon />
                 </IconButton>
-                <IconButton onClick={() => scrollOffer('right')} color="inherit">
+                <IconButton onClick={() => scrollOffers('right')} color="inherit">
                   <ChevronRightIcon />
                 </IconButton>
               </Box>
             </Box>
-            <Grid container spacing={2} ref={offerdRef} sx={{
-              display: 'grid',
-              gridAutoFlow: 'column',
-              gridAutoColumns: 'minmax(240px, 1fr)',
-              gap: 2,
-              overflowX: 'auto',
-              pb: 1,
-              scrollbarWidth: 'none',
-              '&::-webkit-scrollbar': { display: 'none' },
-            }}>
+            <Box
+              ref={offersRef}
+              sx={{
+                display: 'grid',
+                gridAutoFlow: 'column',
+                gridAutoColumns: 'minmax(240px, 1fr)',
+                gap: 2,
+                overflowX: 'auto',
+                pb: 1,
+                scrollbarWidth: 'none',
+                '&::-webkit-scrollbar': { display: 'none' },
+              }}
+            >
               {offersProducts.map((item: any) => (
-                <Grid item xs={12} sm={6} md={4} key={item.name}>
-                  <Card onClick={() => setSelectedProduct(item)} sx={{ p: 2, cursor: 'pointer', height: 350, width: 250 }}>
-                    <Box
-                      component="img"
-                      src={item.imageUrl}
-                      alt={item.name}
-                      sx={{ width: '100%', height: 160, objectFit: 'cover' }}
-                    />
-                    <CardContent>
-                      <Typography variant="subtitle1">{item.name}</Typography>
-                      <Typography color="text.secondary" sx={{
+                <Card
+                  key={item.name}
+                  onClick={() => setSelectedProduct(item)}
+                  sx={{ p: 2, cursor: 'pointer', width: 250 }}
+                >
+                  <Box
+                    component="img"
+                    src={item.imageUrl}
+                    alt={item.name}
+                    sx={{ width: '100%', height: 160, objectFit: 'cover' }}
+                  />
+                  <CardContent>
+                    <Typography variant="subtitle1">{item.name}</Typography>
+                    <Typography
+                      color="text.secondary"
+                      sx={{
                         mt: 0.5,
                         display: '-webkit-box',
                         WebkitLineClamp: 3,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                      }}>
-                        {item.description}
-                      </Typography>
-                      <PriceBlock price={item.price} oldPrice={item.oldPrice} discount={item.discount} />
-                    </CardContent>
-                  </Card>
-                </Grid>
+                      }}
+                    >
+                      {item.description}
+                    </Typography>
+                    <PriceBlock price={item.price} oldPrice={item.oldPrice} discount={item.discount} />
+                  </CardContent>
+                </Card>
               ))}
-            </Grid>
+            </Box>
           </Grid>
         </Grid>
       </Container>
