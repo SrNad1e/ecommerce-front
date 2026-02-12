@@ -16,7 +16,9 @@ import {
   DialogContent,
   DialogTitle,
 } from '@mui/material'
+import TextField from '@mui/material/TextField'
 import SearchIcon from '@mui/icons-material/Search'
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
@@ -33,12 +35,27 @@ function App() {
     featuredRef.current.scrollBy({ left: amount, behavior: 'smooth' })
   }
 
+  const offerdRef = useRef<HTMLDivElement | null>(null)
+
+  const scrollOffer = (direction: 'left' | 'right') => {
+    if (!offerdRef.current) return
+    const amount = direction === 'left' ? -320 : 320
+    offerdRef.current.scrollBy({ left: amount, behavior: 'smooth' })
+  }
+
   const [products, setProducts] = useState<any>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [cartItems, setCartItems] = useState<any[]>([])
   const [cartOpen, setCartOpen] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authName, setAuthName] = useState('')
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [isAuthed, setIsAuthed] = useState(Boolean(localStorage.getItem('token')))
 
 
   useEffect(() => {
@@ -62,6 +79,46 @@ function App() {
     fetchProducts()
   }, [])
 
+  const handleAuth = async () => {
+    try {
+      setAuthError(null)
+
+      const endpoint =
+        authMode === 'login'
+          ? 'http://localhost:3000/auth/login'
+          : 'http://localhost:3000/auth/register'
+
+      const payload =
+        authMode === 'login'
+          ? { email: authEmail, password: authPassword }
+          : { name: authName, email: authEmail, password: authPassword }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error('Credenciales invalidas')
+      }
+
+      const data = await response.json()
+
+      // Guardamos el token en localStorage
+      localStorage.setItem('token', data.access_token)
+      setIsAuthed(true)
+
+      // Limpia campos y cierra modal
+      setAuthEmail('')
+      setAuthPassword('')
+      setAuthName('')
+      setAuthOpen(false)
+    } catch (err) {
+      setAuthError('No se pudo iniciar sesion')
+    }
+  }
+
   if (loading) {
     return <Box sx={{ p: 4, color: 'text.secondary' }}>Cargando productos...</Box>
   }
@@ -72,6 +129,34 @@ function App() {
 
   const featuredProducts = products.slice(0, 2)
   const offersProducts = products.slice(0, 6)
+
+  const PriceBlock = ({ price, oldPrice, discount }: any) => (
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+      <Typography fontWeight={700} color="secondary">
+        ${price}
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
+      >
+        ${oldPrice}
+      </Typography>
+      <Box
+        sx={{
+          ml: 'auto',
+          bgcolor: 'secondary.main',
+          color: '#0b0f14',
+          px: 1,
+          py: 0.2,
+          borderRadius: 1,
+          fontSize: 12,
+          fontWeight: 700,
+        }}
+      >
+        -{discount}%
+      </Box>
+    </Stack>
+  )
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -103,11 +188,34 @@ function App() {
 
             <Stack direction="row" spacing={2}>
               <Badge color="secondary" badgeContent={cartItems.length}>
-                <IconButton color="secondary" aria-label="add to shopping cart">
-                  <AddShoppingCartIcon />
+                <IconButton onClick={() => setCartOpen(true)} color="secondary" aria-label="add to shopping cart">
+                  <ShoppingCartIcon />
                 </IconButton>
               </Badge>
             </Stack>
+            {isAuthed ? (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => {
+                  localStorage.removeItem('token')
+                  setIsAuthed(false)
+                }}
+              >
+                Salir
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => {
+                  setAuthMode('login')
+                  setAuthOpen(true)
+                }}
+              >
+                Entrar
+              </Button>
+            )}
           </Toolbar>
         </Container>
       </AppBar>
@@ -178,7 +286,7 @@ function App() {
                         -{products[7].discount}%
                       </Box>
                     </Stack>
-                    <Button variant="contained" color="secondary" sx={{ mt: 2 }}>
+                    <Button onClick={() => setSelectedProduct(products[7])} variant="contained" color="secondary" sx={{ mt: 2 }}>
                       Ver producto
                     </Button>
                   </CardContent>
@@ -230,31 +338,7 @@ function App() {
                     }}>
                       {item.description}
                     </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-                      <Typography fontWeight={700} color="secondary">
-                        ${item.price}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
-                      >
-                        ${item.oldPrice}
-                      </Typography>
-                      <Box
-                        sx={{
-                          ml: 'auto',
-                          bgcolor: 'secondary.main',
-                          color: '#0b0f14',
-                          px: 1,
-                          py: 0.2,
-                          borderRadius: 1,
-                          fontSize: 12,
-                          fontWeight: 700,
-                        }}
-                      >
-                        -{item.discount}%
-                      </Box>
-                    </Stack>
+                    <PriceBlock price={item.price} oldPrice={item.oldPrice} discount={item.discount} />
                   </CardContent>
                 </Card>
               ))}
@@ -262,17 +346,17 @@ function App() {
 
             {/* Seccion ofertas */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h5">Destacados de hoy</Typography>
+              <Typography variant="h5">Ofertas</Typography>
               <Box>
-                <IconButton onClick={() => scrollFeatured('left')} color="inherit">
+                <IconButton onClick={() => scrollOffer('left')} color="inherit">
                   <ChevronLeftIcon />
                 </IconButton>
-                <IconButton onClick={() => scrollFeatured('right')} color="inherit">
+                <IconButton onClick={() => scrollOffer('right')} color="inherit">
                   <ChevronRightIcon />
                 </IconButton>
               </Box>
             </Box>
-            <Grid container spacing={2} ref={featuredRef} sx={{
+            <Grid container spacing={2} ref={offerdRef} sx={{
               display: 'grid',
               gridAutoFlow: 'column',
               gridAutoColumns: 'minmax(240px, 1fr)',
@@ -302,31 +386,7 @@ function App() {
                       }}>
                         {item.description}
                       </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
-                        <Typography fontWeight={700} color="secondary">
-                          ${item.price}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ textDecoration: 'line-through', color: 'text.secondary' }}
-                        >
-                          ${item.oldPrice}
-                        </Typography>
-                        <Box
-                          sx={{
-                            ml: 'auto',
-                            bgcolor: 'secondary.main',
-                            color: '#0b0f14',
-                            px: 1,
-                            py: 0.2,
-                            borderRadius: 1,
-                            fontSize: 12,
-                            fontWeight: 700,
-                          }}
-                        >
-                          -{item.discount}%
-                        </Box>
-                      </Stack>
+                      <PriceBlock price={item.price} oldPrice={item.oldPrice} discount={item.discount} />
                     </CardContent>
                   </Card>
                 </Grid>
@@ -400,6 +460,93 @@ function App() {
               Agregar al carrito
             </Button>
           </Badge>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={cartOpen} onClose={() => setCartOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Carrito</DialogTitle>
+        <DialogContent>
+          {cartItems.length === 0 ? (
+            <Typography color="text.secondary">Tu carrito esta vacio.</Typography>
+          ) : (
+            <Stack spacing={2}>
+              {cartItems.map((item, idx) => (
+                <Card key={`${item._id || item.name}-${idx}`} sx={{ p: 2 }}>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    {item.imageUrl && (
+                      <Box
+                        component="img"
+                        src={item.imageUrl}
+                        alt={item.name}
+                        sx={{ width: 80, height: 60, borderRadius: 1, objectFit: 'cover' }}
+                      />
+                    )}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography fontWeight={600}>{item.name}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        ${item.price}
+                      </Typography>
+                    </Box>
+                    <Button
+                      color="inherit"
+                      onClick={() =>
+                        setCartItems((prev) => prev.filter((_, i) => i !== idx))
+                      }
+                    >
+                      Quitar
+                    </Button>
+                  </Stack>
+                </Card>
+              ))}
+            </Stack>
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog open={authOpen} onClose={() => setAuthOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          {authMode === 'login' ? 'Iniciar sesion' : 'Crear cuenta'}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            {authMode === 'register' && (
+              <TextField
+                label="Nombre"
+                value={authName}
+                onChange={(e) => setAuthName(e.target.value)}
+                fullWidth
+              />
+            )}
+            <TextField
+              label="Email"
+              value={authEmail}
+              onChange={(e) => setAuthEmail(e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Password"
+              type="password"
+              value={authPassword}
+              onChange={(e) => setAuthPassword(e.target.value)}
+              fullWidth
+            />
+            {authError && (
+              <Typography color="error.main" variant="body2">
+                {authError}
+              </Typography>
+            )}
+            <Button variant="contained" color="secondary" onClick={() => handleAuth()}>
+              {authMode === 'login' ? 'Entrar' : 'Registrarme'}
+            </Button>
+            <Button
+              color="inherit"
+              onClick={() =>
+                setAuthMode((prev) => (prev === 'login' ? 'register' : 'login'))
+              }
+            >
+              {authMode === 'login'
+                ? 'No tienes cuenta? Registrate'
+                : 'Ya tienes cuenta? Inicia sesion'}
+            </Button>
+          </Stack>
         </DialogContent>
       </Dialog>
     </Box>
