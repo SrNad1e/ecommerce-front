@@ -61,7 +61,7 @@ function App() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('http://localhost:3000/products')
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/products`)
         if (!response.ok) {
           throw new Error('No se pudieron cargar los productos')
         }
@@ -85,8 +85,8 @@ function App() {
 
       const endpoint =
         authMode === 'login'
-          ? 'http://localhost:3000/auth/login'
-          : 'http://localhost:3000/auth/register'
+          ? `${import.meta.env.VITE_API_URL}/auth/login`
+          : `${import.meta.env.VITE_API_URL}/auth/register`
 
       const payload =
         authMode === 'login'
